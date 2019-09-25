@@ -94,36 +94,16 @@ function makePromiseWithPromise(promise, promiseName) {
 var makePromise = makePromiseWithPromise(Promise, 'Promise ');
 var makePromise2 = makePromiseWithPromise(Promise2, 'Promise2');
 
-// console.log(new Promise(function(some, some) {}));
-
-p1 = makePromise2('p1')();
-p2 = p1.then(makePromise2('p2'));
-p3 = p2.then(makePromise2('p3'));
-p4 = p3
-  .then(console.log)
+p1 = makePromise2('p1')()
+  .then(makePromise2('p2'))
+  .then(makePromise2('p3'))
   .then(console.log)
   .then(console.log)
   .then(makePromise2('p4'));
 
-p1 = makePromise('p1')();
-p2 = p1.then(makePromise('p2'));
-p3 = p2.then(makePromise('p3'));
-p4 = p3
-  .then(console.log)
+p1 = makePromise('p1')()
+  .then(makePromise('p2'))
+  .then(makePromise('p3'))
   .then(console.log)
   .then(console.log)
   .then(makePromise('p4'));
-
-
-// p2 = makePromise2()
-//     .then(log)
-//     .then(log)
-//     .then(log);
-
-// p2 = new Promise(function(resolve, reject) {
-//     setTimeout(function() {resolve(2)}, 2000);
-// });
-//
-// p3 = p2.then(console.log);
-// p3.then(console.log)
-// console.log(p3)
