@@ -41,8 +41,10 @@ Promise2 = function (executor) {
                     }
                     // SYNC all right }
                 } catch (e) {
+                    // SYNC error {
                     onRejectedValue && onRejectedValue(this.value);
-                    pr.status = STATUS.REJECTED;
+                    pr.reject(this.value);
+                    // SYNC error }
                 }
             } else if (this.status === STATUS.REJECTED) {
                 var onRejectedValue = onRejected && onRejected(this.value);
@@ -52,16 +54,23 @@ Promise2 = function (executor) {
                     pr.resolve(onRejectedValue);
                 }
             }
-        // SYNC }
-        // ASYNC {
+            // SYNC }
         } else {
+            // ASYNC {
             this.onHandle = function () {
                 if (this.status === STATUS.RESOLVED) {
-                    var onFulfilledValue = onFulfilled(this.value);
-                    if (this.constructor.prototype.isPrototypeOf(onFulfilledValue)) {
-                        onFulfilledValue.onResolved = pr.resolve;
-                    } else {
-                        pr.resolve(onFulfilledValue);
+                    try {
+                        var onFulfilledValue = onFulfilled(this.value);
+                        if (this.constructor.prototype.isPrototypeOf(onFulfilledValue)) {
+                            onFulfilledValue.onResolved = pr.resolve;
+                        } else {
+                            pr.resolve(onFulfilledValue);
+                        }
+                    } catch (e) {
+                        // ASYNC error {
+                        onRejectedValue && onRejectedValue(this.value);
+                        pr.reject(this.value);
+                        // ASYNC error }
                     }
                 } else if (this.status === STATUS.REJECTED) {
                     var onRejectedValue = onRejected(this.value);
@@ -72,6 +81,7 @@ Promise2 = function (executor) {
                     }
                 }
             }.bind(this);
+            // ASYNC }
         }
         return pr;
     }.bind(this);
@@ -144,6 +154,8 @@ function test() {
         .then(console.log)
         .then(makePromise('p4'));
 }
+
+test()
 
 var promise = new Promise2(function (resolve) {
     console.log(41);
