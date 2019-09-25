@@ -1,40 +1,94 @@
-Promise = function(executor) {
+Promise2 = function(executor, isStarted) {
     this.executer = executor;
-    this.checkIsPending = function() {return this.status === 'pending'};
+    this.isStarted = isStarted === undefined ? true : false;
+    var STATUS = {
+        PENDING: 0,
+        RESOLVED: 1,
+        REJECTED: 2
+    };
+
+    this.resolve = function(value) {
+        return new this.constructor(function(resolve, reject) {resolve(value)})
+    };
+    this.reject = function (value) {
+        return new this.constructor(function(resolve, reject) {reject(value)})
+    };
+    this.checkIsPending = function() {return this.status === STATUS.PENDING};
+
     this.interval = undefined;
-    this.then = function(_resolve) {
+    this.then = function(onFulfilled, onRejected) {
+        var pr = new this.constructor(function (resolve, reject) {}, false);
         this.interval = setInterval(function() {
-            if (!this.checkIsPending()) {
-                _resolve(this.value);
+            if (this.status !== STATUS.PENDING) {
                 clearInterval(this.interval);
-                // return new this.constructor(this.callback);
+                if (this.status === STATUS.RESOLVED) {
+                    var pr2 = onFulfilled(this.value);
+                    pr.executer = pr2.executer;
+                    pr.isStarted = true;
+                } else if (this.status === STATUS.REJECTED) {
+                    var pr2 = onRejected(this.value);
+                    pr.executer = pr2.executer;
+                    pr.isStarted = true;
+                }
             }
         }.bind(this), 5);
-        var pr = new this.constructor(function(resolve, reject){});
-        console.log (pr)
+        // return this;
         return pr;
-    }
-    this.status = 'pending';
+    };
+    this.status = STATUS.PENDING;
     this.value = undefined;
     // this.getValue = function() {
     //     return this.value
     // };
     var resolve = function(value) {
         this.value = value;
-        this.status = 'resolved';
+        this.status = STATUS.RESOLVED;
     }.bind(this);
     var reject = function(value) {
         this.value = value;
-        this.status = 'rejected';
+        this.status = STATUS.REJECTED;
     }.bind(this);
-    this.executer(resolve, reject)
+
+    this.startInterval = undefined;
+    this.startInterval = setInterval(function () {
+        if (this.isStarted) {
+            clearInterval(this.startInterval)
+            this.executer(resolve, reject)
+        }
+    }.bind(this), 1)
+};
+
+var counter = 0;
+var log = console.log;
+
+function makePromiseWithPromise(promise, promiseName) {
+    return function (message) {
+        return function () {
+            return new promise(function (resolve, reject) {
+                setTimeout(function () {
+                    var out = promiseName + ': ' + message + ' :' + ++counter;
+                    console.log(out);
+                    resolve(out);
+                }, 1000)
+            })
+        }
+    }
 }
 
-p = new Promise(function(resolve, reject) {
-    setTimeout(function() { resolve(7) }, 1000)
-});
-p1 = p.then(console.log)
-p2 = p1.then(console.log)
+var makePromise  = makePromiseWithPromise(Promise, 'Promise ');
+var makePromise2 = makePromiseWithPromise(Promise2, 'Promise2');
+
+// console.log(new Promise(function(some, some) {}));
+
+p1 = makePromise2('p1')();
+p2 = p1.then(makePromise2('p2'));
+p3 = p2.then(makePromise2('p3'));
+
+
+// p2 = makePromise2()
+//     .then(log)
+//     .then(log)
+//     .then(log);
 
 // p2 = new Promise(function(resolve, reject) {
 //     setTimeout(function() {resolve(2)}, 2000);
