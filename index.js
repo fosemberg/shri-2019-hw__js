@@ -9,16 +9,15 @@ Promise2 = function (executor) {
     }
 
     var STATUS = {
-        PENDING: 0,
-        RESOLVED: 1,
-        REJECTED: 2
+        PENDING: 'pending',
+        RESOLVED: 'resolved',
+        REJECTED: 'rejected'
     };
 
     this.executer = executor;
 
     this.status = STATUS.PENDING;
     this.value = undefined;
-    this.handled = false;
     this.onResolved = noop;
     this.onReject = noop;
     this.onHandle = noop;
@@ -30,21 +29,31 @@ Promise2 = function (executor) {
     this.then = function (onFulfilled, onRejected) {
         var pr = new this.constructor(noop);
         if (this.status !== STATUS.PENDING) {
+            // SYNC {
             if (this.status === STATUS.RESOLVED) {
-                var onFulfilledValue = onFulfilled(this.value);
-                if (this.constructor.prototype.isPrototypeOf(onFulfilledValue)) {
-                    pr = onFulfilledValue;
-                } else {
-                    pr.resolve(onFulfilledValue);
+                try {
+                    // SYNC all right {
+                    var onFulfilledValue = onFulfilled(this.value);
+                    if (this.constructor.prototype.isPrototypeOf(onFulfilledValue)) {
+                        pr = onFulfilledValue;
+                    } else {
+                        pr.resolve(onFulfilledValue);
+                    }
+                    // SYNC all right }
+                } catch (e) {
+                    onRejectedValue && onRejectedValue(this.value);
+                    pr.status = STATUS.REJECTED;
                 }
             } else if (this.status === STATUS.REJECTED) {
-                var onRejectedValue = onRejected(this.value);
+                var onRejectedValue = onRejected && onRejected(this.value);
                 if (this.constructor.prototype.isPrototypeOf(onRejectedValue)) {
                     pr = onRejectedValue;
                 } else {
-                    pr.reject(onRejectedValue);
+                    pr.resolve(onRejectedValue);
                 }
             }
+        // SYNC }
+        // ASYNC {
         } else {
             this.onHandle = function () {
                 if (this.status === STATUS.RESOLVED) {
@@ -72,7 +81,6 @@ Promise2 = function (executor) {
         this.onResolved();
 
         this.value = value;
-        this.handled = true;
         this.onHandle();
     }.bind(this);
     this.reject = function (value) {
@@ -80,11 +88,14 @@ Promise2 = function (executor) {
         this.onReject();
 
         this.value = value;
-        this.handled = true;
         this.onHandle();
     }.bind(this);
 
-    this.executer(this.resolve, this.reject);
+    try {
+        this.executer(this.resolve, this.reject);
+    } catch (e) {
+        console.log(e);
+    }
 };
 
 Promise2.resolve = function (value) {
@@ -141,7 +152,7 @@ var promise = new Promise2(function (resolve) {
 
 promise
     .then(function (value) {
-      return value + 1
+        return value + 1
     })
     .then(function (value) {
         console.log(value) // 43
@@ -151,7 +162,7 @@ promise
     })
     .then(function (value) {
         console.log(value) // 137
-        // throw new Error()
+        throw new Error()
     })
     .then(
         function () {
