@@ -30,8 +30,8 @@ Promise2 = function (executor) {
         var pr = new this.constructor(noop);
         if (this.status !== STATUS.PENDING) {
             // SYNC {
-            if (this.status === STATUS.RESOLVED) {
-                try {
+            try {
+                if (this.status === STATUS.RESOLVED) {
                     // SYNC all right {
                     var onFulfilledValue = onFulfilled(this.value);
                     if (this.constructor.prototype.isPrototypeOf(onFulfilledValue)) {
@@ -40,45 +40,46 @@ Promise2 = function (executor) {
                         pr.resolve(onFulfilledValue);
                     }
                     // SYNC all right }
-                } catch (e) {
-                    // SYNC error {
-                    onRejectedValue && onRejectedValue(this.value);
-                    pr.reject(this.value);
-                    // SYNC error }
-                }
-            } else if (this.status === STATUS.REJECTED) {
-                var onRejectedValue = onRejected && onRejected(this.value);
-                if (this.constructor.prototype.isPrototypeOf(onRejectedValue)) {
-                    pr = onRejectedValue;
                 } else {
-                    pr.resolve(onRejectedValue);
+                    var onRejectedValue = onRejected ? onRejected(this.value) : onFulfilled(this.value);
+                    if (this.constructor.prototype.isPrototypeOf(onRejectedValue)) {
+                        pr = onRejectedValue;
+                    } else {
+                        pr.resolve(onRejectedValue);
+                    }
                 }
+            } catch (e) {
+                // SYNC error {
+                onRejectedValue && onRejectedValue(this.value);
+                pr.reject(this.value);
+                // SYNC error }
             }
             // SYNC }
         } else {
             // ASYNC {
             this.onHandle = function () {
-                if (this.status === STATUS.RESOLVED) {
-                    try {
+                try {
+                    if (this.status === STATUS.RESOLVED) {
+
                         var onFulfilledValue = onFulfilled(this.value);
                         if (this.constructor.prototype.isPrototypeOf(onFulfilledValue)) {
                             onFulfilledValue.onResolved = pr.resolve;
                         } else {
                             pr.resolve(onFulfilledValue);
                         }
-                    } catch (e) {
-                        // ASYNC error {
-                        onRejectedValue && onRejectedValue(this.value);
-                        pr.reject(this.value);
-                        // ASYNC error }
+                    } else if (this.status === STATUS.REJECTED) {
+                        var onRejectedValue = onRejected(this.value);
+                        if (this.constructor.prototype.isPrototypeOf(onRejectedValue)) {
+                            onRejectedValue.onReject = pr.reject;
+                        } else {
+                            pr.reject(onRejectedValue);
+                        }
                     }
-                } else if (this.status === STATUS.REJECTED) {
-                    var onRejectedValue = onRejected(this.value);
-                    if (this.constructor.prototype.isPrototypeOf(onRejectedValue)) {
-                        onRejectedValue.onReject = pr.reject;
-                    } else {
-                        pr.reject(onRejectedValue);
-                    }
+                } catch (e) {
+                    // ASYNC error {
+                    onRejectedValue && onRejectedValue(this.value);
+                    pr.reject(this.value);
+                    // ASYNC error }
                 }
             }.bind(this);
             // ASYNC }
@@ -182,9 +183,13 @@ promise
             return 'something';
         },
         function () {
+            throw new Error();
             return 'ошибка обработана'
         }
     )
     .then(function (value) {
-        console.log(value) // "ошибка обработана"
-    });
+            console.log(value) // "ошибка обработана"
+        },
+        function (value) {
+            console.log('Was error: ' + value);
+        });
