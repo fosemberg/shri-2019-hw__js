@@ -1,4 +1,6 @@
+var promiseCounter = 0;
 Promise2 = function(executor, isStarted) {
+    this.id = ++promiseCounter;
     this.executer = executor;
     this.isStarted = isStarted === undefined ? true : false;
     var STATUS = {
@@ -22,6 +24,7 @@ Promise2 = function(executor, isStarted) {
             if (this.status !== STATUS.PENDING) {
                 clearInterval(this.interval);
                 if (this.status === STATUS.RESOLVED) {
+                    console.log('onFulfilled');
                     var pr2 = onFulfilled(this.value);
                     pr.executer = pr2.executer;
                     pr.isStarted = true;
@@ -52,8 +55,10 @@ Promise2 = function(executor, isStarted) {
     this.startInterval = undefined;
     this.startInterval = setInterval(function () {
         if (this.isStarted) {
-            clearInterval(this.startInterval)
-            this.executer(resolve, reject)
+            clearInterval(this.startInterval);
+            this.executer(resolve, reject);
+            console.log('started');
+            this.isStarted = false;
         }
     }.bind(this), 1)
 };
