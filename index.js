@@ -1,4 +1,6 @@
 var promiseCounter = 0;
+var noop = function() {};
+
 Promise2 = function(executor, isStarted) {
     this.id = ++promiseCounter;
     this.executer = executor;
@@ -19,15 +21,16 @@ Promise2 = function(executor, isStarted) {
 
     this.interval = undefined;
     this.then = function(onFulfilled, onRejected) {
-        var pr = new this.constructor(function (resolve, reject) {}, false);
+        var pr = new this.constructor(noop, false);
         this.interval = setInterval(function() {
             if (this.status !== STATUS.PENDING) {
                 clearInterval(this.interval);
                 if (this.status === STATUS.RESOLVED) {
                     console.log('onFulfilled');
-                    var pr2 = onFulfilled(this.value);
-                    pr.executer = pr2.executer;
-                    pr.isStarted = true;
+                    onFulfilled(this.value).onResolved = function () {
+                        pr.isStarted = true
+                        pr.status = STATUS.RESOLVED;
+                    };
                 } else if (this.status === STATUS.REJECTED) {
                     var pr2 = onRejected(this.value);
                     pr.executer = pr2.executer;
@@ -43,13 +46,19 @@ Promise2 = function(executor, isStarted) {
     // this.getValue = function() {
     //     return this.value
     // };
+
+    this.onResolved = noop;
+    this.onReject = noop;
+
     var resolve = function(value) {
         this.value = value;
         this.status = STATUS.RESOLVED;
+        this.onResolved();
     }.bind(this);
     var reject = function(value) {
         this.value = value;
         this.status = STATUS.REJECTED;
+        this.onReject();
     }.bind(this);
 
     this.startInterval = undefined;
