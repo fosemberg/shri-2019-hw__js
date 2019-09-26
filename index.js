@@ -2,10 +2,10 @@ function run() {
   var counter = 0;
   var log = console.log;
 
-  function makePromiseWithPromise(promise, promiseName) {
+  function makePromiseWithPromise(PromiseRealization, promiseName) {
     return function (message) {
       return function () {
-        return new promise(function (resolve, reject) {
+        return new PromiseRealization(function (resolve, reject) {
           setTimeout(function () {
             var out = promiseName + ': ' + message + ' :' + ++counter;
             console.log(out);
