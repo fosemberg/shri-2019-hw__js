@@ -16,23 +16,23 @@ function run() {
     }
   }
 
-  var makePromise = makePromiseWithPromise(NativePromise, 'NativePromise ');
-  var makePromise2 = makePromiseWithPromise(Promise, 'CustomPromise');
+  var makeNativePromise = makePromiseWithPromise(NativePromise, 'NativePromise ');
+  var makeCustomPromise = makePromiseWithPromise(Promise, 'CustomPromise');
 
   function test() {
-    p1 = makePromise2('p1')()
-      .then(makePromise2('p2'))
-      .then(makePromise2('p3'))
+    makeCustomPromise('p1')()
+      .then(makeCustomPromise('p2'))
+      .then(makeCustomPromise('p3'))
       .then(console.log)
       .then(console.log)
-      .then(makePromise2('p4'));
+      .then(makeCustomPromise('p4'));
 
-    p1 = makePromise('p1')()
-      .then(makePromise('p2'))
-      .then(makePromise('p3'))
+    makeNativePromise('p1')()
+      .then(makeNativePromise('p2'))
+      .then(makeNativePromise('p3'))
       .then(console.log)
       .then(console.log)
-      .then(makePromise('p4'));
+      .then(makeNativePromise('p4'));
   }
 
   test()
