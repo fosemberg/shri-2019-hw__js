@@ -23,15 +23,11 @@ function run() {
     makeCustomPromise('p1')()
       .then(makeCustomPromise('p2'))
       .then(makeCustomPromise('p3'))
-      .then(console.log)
-      .then(console.log)
       .then(makeCustomPromise('p4'));
 
     makeNativePromise('p1')()
       .then(makeNativePromise('p2'))
       .then(makeNativePromise('p3'))
-      .then(console.log)
-      .then(console.log)
       .then(makeNativePromise('p4'));
   }
 
